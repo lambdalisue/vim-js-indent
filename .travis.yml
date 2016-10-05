@@ -1,0 +1,14 @@
+language: generic
+sudo: false
+
+install:
+  - PYTHONUSERBASE=$HOME/.local pip install --user vim-vint
+
+script:
+  - which vim
+  - which python
+  - which vint
+  - vim --version
+  - python --version
+  - vint --version
+  - vint indent
