@@ -149,7 +149,7 @@ endfunction
 " Returns a non-zero number if a line starts by closing a container.
 function s:ClosesContainerAtStart(lnum) abort
   let line = getline(a:lnum)
-  let result = line =~ '^\s*' . s:js_mid_line_comment . '[})\]]'
+  let result = line =~# '^\s*' . s:js_mid_line_comment . '[})\]]'
   return result
 endfunction 
 
@@ -157,7 +157,7 @@ endfunction
 function s:ClosesContainerAtEnd(lnum) abort
   let line = getline(a:lnum)
   let result = 0
-  let close_at_end = line =~ s:js_mid_line_comment . '[})\]][,;]\?' .
+  let close_at_end = line =~# s:js_mid_line_comment . '[})\]][,;]\?' .
         \ s:js_end_line_comment . '$'
   if close_at_end 
     let result = s:OpensOrClosesContainer(a:lnum, 1)
@@ -180,7 +180,7 @@ endfunction
 " statement ends on the given line.
 function s:EndsMultiLineStatement(lnum, check) abort
   let line = getline(a:lnum)
-  let ends_statement = line =~ ';\s*' . s:js_end_line_comment . '$'
+  let ends_statement = line =~# ';\s*' . s:js_end_line_comment . '$'
   let result = 0
   if ends_statement
     " This line ends a statement. Find the previous non-comment line with
@@ -242,11 +242,9 @@ function s:GetContainerStart(lnum, fromEnd) abort
       let result = snum 
     endif
   elseif container_char ==# ')'
-    let result = s:SearchForPairStart(a:lnum, container_char_idx + 1, '(',
-          \ ')')
+    let result = s:SearchForPairStart(a:lnum, container_char_idx + 1, '(', ')')
   else
-    let result = s:SearchForPairStart(a:lnum, container_char_idx + 1,
-          \ '\[', ']')
+    let result = s:SearchForPairStart(a:lnum, container_char_idx + 1, '\[', ']')
   endif
 
   return result
@@ -372,7 +370,7 @@ function s:IsSingleLineSwitchLabel(lnum) abort
   if result != -1
     let line = getline(a:lnum)
     let pos = match(line, '^\s*' . s:js_mid_line_comment .
-          \ '\(\<case\>\s\+.*\|default\)\s*:\zs.*')
+          \ '\%(\<case\>\s\+.*\|default\)\s*:\zs.*')
     if pos != -1
       let result = line[pos :] !~ '\s*' . s:js_mid_line_comment .
             \ '\<break\>\s*;\?\s*' . s:js_end_line_comment . '$'
@@ -384,7 +382,7 @@ endfunction
 " Returns a non-zero number if a line opens a switch label.
 "
 "     switch (foo) {
-"         case a:                  <---           
+"         case a:                  <---
 "             console.log('bar');
 "             break;
 "         case b: x = y; break;
@@ -392,8 +390,8 @@ endfunction
 "
 function s:IsSwitchLabel(lnum) abort
   let line = getline(a:lnum)
-  let result = line =~ '^\s*' . s:js_mid_line_comment .
-        \ '\(\<case\>\s\+.*\|default\)\s*:'
+  let result = line =~# '^\s*' . s:js_mid_line_comment .
+        \ '\%(\<case\>\s\+.*\|default\)\s*:'
   return result
 endfunction
 
@@ -478,7 +476,7 @@ function s:SearchForPair(lnum, cnum, beg, end, backwards) abort
   " Find a matching pair character that isn't in a comment, string, or regexp
   let pos = searchpairpos(a:beg, '', a:end, flags,
         \ 'synIDattr(synID(line("."), col("."), 0), "name") =~?
-        \ "\(Comment\|String\|Regexp\|jsDoc\)"')
+        \ "\%(Comment\|String\|Regexp\|jsDoc\)"')
   let result = pos[0]
 
   " Restore the cursor position
@@ -506,7 +504,7 @@ function s:StartsFluentAccess(lnum) abort
   if result 
     let pnbnum = prevnonblank(a:lnum - 1)
     let pnbline = getline(pnbnum)
-    let result = pnbline !~ s:fluent_accessor
+    let result = pnbline !~# s:fluent_accessor
   endif
   return result
 endfunction
@@ -532,7 +530,7 @@ endfunction
 "
 function s:StartsMultiLineVar(lnum) abort
   let line = getline(a:lnum)
-  let result = line =~ '\<var\s\+\w\+\>.*,' . s:js_end_line_comment . '$'
+  let result = line =~# '\<var\s\+\w\+\>.*,' . s:js_end_line_comment . '$'
   return result
 endfunction
 
