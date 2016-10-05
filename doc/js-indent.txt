@@ -1,0 +1,41 @@
+*js-indent.txt*			Indenter for JavaScript and TypeScript
+
+Version: 1.0.0
+Authors: Jason Cheatham
+         Alisue
+License: Vim license
+
+
+=============================================================================
+CONTENTS					*vim-js-indent-contents*
+
+INTRODUCTION			|vim-js-indent-introduction|
+CONFIGURATION			|vim-js-indent-configuration|
+
+
+=============================================================================
+INTRODUCTION					*vim-js-indent-introduction*
+
+Vim indenter for standalone and embedded JavaScript and TypeScript.
+
+Copyright © 2014-2016 Jason Cheatham.
+Distributed under the same terms as Vim itself. See |license|.
+
+
+=============================================================================
+CONFIGURATION					*vim-js-indent-configuration*
+
+						*g:js_indent_flat_switch*
+g:js_indent_flat_switch
+	Boolean, default=0.
+	Set to 1 to make case statements align with their containing switch.
+
+						*g:js_indent_typescript*
+g:js_indent_typescript
+	Boolean, default=1
+	Set to 0 to disable use of the JavaScript indenter for TypeScript
+	buffers.
+
+
+=============================================================================
+vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl
