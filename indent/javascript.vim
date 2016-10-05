@@ -17,11 +17,6 @@ if !exists('g:js_indent_flat_switch')
   let g:js_indent_flat_switch = 0
 endif
 
-" set to 1 to enable debug logging
-if !exists('g:js_indent_logging')
-  let g:js_indent_logging = 0
-endif
-
 " Setup
 " ------------------------------------------------------------------------------
 " The expression used to calculate the indent for a line
@@ -46,16 +41,6 @@ else
   endfunc
 endif
 
-" Debug logging
-if g:js_indent_logging
-  function s:Log(...) abort
-    echom join(a:000, '')
-  endfunction
-else
-  function s:Log(...) abort
-  endfunction
-endif
-
 " Variables
 " ----------------------------------------------------------------------------
 " Inline comments (for anchoring other statements)
@@ -68,11 +53,9 @@ let s:fluent_accessor = '^\s*\.\w'
 " Indenter
 " ----------------------------------------------------------------------------
 function GetJsIndent(lnum) abort
-  call s:Log('>> Getting JS indent for ', a:lnum)
   " This calls a helper method so we can easily log the final indent value
   " (GetIndent has many return points).
   let ind = s:GetIndent(a:lnum)
-  call s:Log('>> Indent = ', ind)
   return ind
 endfunction
 
@@ -94,34 +77,22 @@ function s:GetIndent(lnum) abort
 
   let pnbnum = prevnonblank(a:lnum - 1)
   let ind = indent(pnbnum)
-  call s:Log('>> Starting indent for line ', a:lnum, ': ', ind)
-
-  call s:Log('>> Checking if previous non-blank line (', pnbnum,
-        \ ') opens a block comment')
   if s:IsBlockCommentStart(pnbnum)
     return ind + 1
   endif
 
-  call s:Log('>> Checking if previous non-blank line (', pnbnum,
-        \ ') closes a block comment')
   if s:IsBlockCommentEnd(pnbnum)
     return ind - 1
   endif
 
-  call s:Log('>> Checking if previous non-blank line (', pnbnum,
-        \ ') is a comment line')
   if s:IsComment(pnbnum)
     return ind
   endif
 
-  call s:Log('>> Checking if this line (', a:lnum,
-        \ ') starts by closing a container')
   if s:ClosesContainerAtStart(a:lnum)
     return indent(s:GetContainerStart(a:lnum, 0))
   endif
 
-  call s:Log('>> Checking if this line line (', pnbnum,
-        \ ') is a switch label')
   if s:IsSwitchLabel(a:lnum)
     let csnum = s:GetSwitchStart(a:lnum)
     if csnum != -1
@@ -133,33 +104,22 @@ function s:GetIndent(lnum) abort
     endif
   endif
 
-  call s:Log('>> Checking if this line (', a:lnum,
-        \ ') start a fluent chain')
   if s:StartsFluentAccess(a:lnum)
     return ind + s:shiftwidth()
   endif
 
-  call s:Log('>> Checking if previous non-blank line (', pnbnum,
-        \ ') is a switch label')
   if s:IsSwitchLabel(pnbnum)
-    call s:Log('is a switch label')
     return ind + s:shiftwidth()
   endif
 
-  call s:Log('>> Checking if previous non-blank line (', pnbnum,
-        \ ') ends by closing a container')
   if s:ClosesContainerAtEnd(pnbnum)
     return indent(s:GetContainerStart(pnbnum, 1))
   endif
 
-  call s:Log('>> Checking if previous non-blank line (', pnbnum,
-        \ ') ends a multi-line declaration or assignment')
   if s:EndsMultiLineVar(pnbnum) || s:EndsMultiLineAssignment(pnbnum)
     return ind - s:shiftwidth()
   endif
 
-  call s:Log('>> Checking if previous non-blank line (', pnbnum,
-        \ ') opens a container')
   if s:OpensContainer(pnbnum)
     let csnum = s:GetControlBlockStart(pnbnum)
     if csnum != -1
@@ -177,13 +137,10 @@ function s:GetIndent(lnum) abort
     endif
   endif
 
-  call s:Log('>> Checking if previous non-blank line (', pnbnum,
-        \ ') starts a multi-line var or assignment')
   if s:StartsMultiLineVar(pnbnum) || s:StartsMultiLineAssignment(pnbnum)
     return ind + s:shiftwidth() 
   endif
 
-  call s:Log('>> Keeping current initial')
   return ind
 endfunction
 
@@ -193,7 +150,6 @@ endfunction
 function s:ClosesContainerAtStart(lnum) abort
   let line = getline(a:lnum)
   let result = line =~ '^\s*' . s:js_mid_line_comment . '[})\]]'
-  call s:Log('ClosesContainerAtStart(', line, '): ', result)
   return result
 endfunction 
 
@@ -206,7 +162,6 @@ function s:ClosesContainerAtEnd(lnum) abort
   if close_at_end 
     let result = s:OpensOrClosesContainer(a:lnum, 1)
   endif
-  call s:Log('ClosesContainerAtEnd(', a:lnum, '): ', result)
   return result
 endfunction
 
@@ -217,9 +172,7 @@ endfunction
 "         + d;            <--- 
 "
 function s:EndsMultiLineAssignment(lnum) abort
-  let result = s:EndsMultiLineStatement(a:lnum,
-        \ 's:StartsMultiLineAssignment')
-  call s:Log('EndsMultiLineAssignment(', a:lnum, '): ', result)
+  let result = s:EndsMultiLineStatement(a:lnum, 's:StartsMultiLineAssignment')
   return result
 endfunction
 
@@ -237,7 +190,6 @@ function s:EndsMultiLineStatement(lnum, check) abort
       let result = call(a:check, [dinum])
     endif
   endif
-  call s:Log('EndsMultiLine(', line, '): ', result)
   return result
 endfunction
 
@@ -249,7 +201,6 @@ endfunction
 "
 function s:EndsMultiLineVar(lnum) abort
   let result = s:EndsMultiLineStatement(a:lnum, 's:StartsMultiLineVar')
-  call s:Log('EndsMultiLineVar(', a:lnum, '): ', result)
   return result
 endfunction 
 
@@ -272,7 +223,6 @@ function s:GetContainerStart(lnum, fromEnd) abort
           \ '\zs[})\]]')
   endif 
 
-  call s:Log('  getting start for ', a:lnum, ' fromEnd=', a:fromEnd)
 
   let container_char = line[container_char_idx]
 
@@ -299,7 +249,6 @@ function s:GetContainerStart(lnum, fromEnd) abort
           \ '\[', ']')
   endif
 
-  call s:Log('GetContainerStart(', line, '): ', result)
   return result
 endfunction
 
@@ -320,7 +269,6 @@ function s:GetControlBlockStart(lnum) abort abort
     " Column numbers start at 1
     let result = s:SearchForPairStart(a:lnum, paren_end + 1, '(', ')')
   endif 
-  call s:Log('GetControlBlockStart(', line, '): ', result)
   return result
 endfunction
 
@@ -349,7 +297,6 @@ function s:GetPreviousNonCommentLine(lnum) abort abort
       let pnum = prevnonblank(pnum - 1)
     endif
   endwhile 
-  call s:Log('GetPreviousNonCommentLine(', a:lnum, '): ', result)
   return result
 endfunction
 
@@ -362,7 +309,6 @@ endfunction
 "
 function s:GetSwitchStart(lnum) abort
   let result = s:SearchForPair(a:lnum, 1, '\<switch\s*(.*)\_s*{', '}', 1)
-  call s:Log('GetSwitchStart(', a:lnum, '): ', result)
   return result
 endfunction
 
@@ -374,7 +320,6 @@ endfunction
 function s:IsBlockCommentEnd(lnum) abort
   let line = getline(a:lnum)
   let result = line =~# '^\s*\*\/'
-  call s:Log('IsBlockCommentEnd(', line, '): ', result)
   return result
 endfunction
 
@@ -387,7 +332,6 @@ function s:IsBlockCommentStart(lnum) abort
     let incmt = matchstr(line, '^\s*\/\*\*\?\zs.*$')
     let result = incmt !~# '\*\/'
   endif
-  call s:Log('IsBlockCommentStart(', line, '): ', result)
   return result
 endfunction
 
@@ -398,7 +342,6 @@ function s:IsComment(lnum) abort
   if !result 
     let result = s:IsInBlockComment(a:lnum)
   endif
-  call s:Log('IsComment(', line, '): ', result)
   return result
 endfunction
 
@@ -412,7 +355,6 @@ function s:IsInBlockComment(lnum) abort
   let lineType = synIDattr(synID(a:lnum, 1, 1), 'name')
   let result = lineType ==# 'javascriptComment' ||
         \ lineType ==# 'jsBlockComment'
-  call s:Log('IsInBlockComment(' . a:lnum . '): ' . result)
   return result
 endfunction
 
@@ -436,7 +378,6 @@ function s:IsSingleLineSwitchLabel(lnum) abort
             \ '\<break\>\s*;\?\s*' . s:js_end_line_comment . '$'
     endif
   endif 
-  call s:Log('IsSingleLineSwitchLabel(' . a:lnum . '): ' . result)
   return result
 endfunction
 
@@ -453,7 +394,6 @@ function s:IsSwitchLabel(lnum) abort
   let line = getline(a:lnum)
   let result = line =~ '^\s*' . s:js_mid_line_comment .
         \ '\(\<case\>\s\+.*\|default\)\s*:'
-  call s:Log('IsSwitchLabel(', line, '): ', result)
   return result
 endfunction
 
@@ -471,7 +411,6 @@ function s:IsSwitchStart(lnum) abort
     let pnbnum = s:GetPreviousNonCommentLine(a:lnum - 1)
     let result = line =~# switch_start . '\s*' . s:js_end_line_comment . '$'
   endif
-  call s:Log('IsSwitchStart(', line, '): ', result)
   return result
 endfunction
 
@@ -479,7 +418,6 @@ endfunction
 " [...]) without closing it.
 function s:OpensContainer(lnum) abort
   let result = s:OpensOrClosesContainer(a:lnum, 0)
-  call s:Log('OpensContainer(', a:lnum, '): ', result)
   return result
 endfunction
 
@@ -519,7 +457,6 @@ function s:OpensOrClosesContainer(lnum, closes) abort
     endif
     let i += 1
   endwhile
-  call s:Log('OpensOrClosesContainer(', line, '): ', result)
   return result
 endfunction
 
@@ -547,8 +484,6 @@ function s:SearchForPair(lnum, cnum, beg, end, backwards) abort
   " Restore the cursor position
   call cursor(curpos[1], curpos[2])
 
-  call s:Log('SearchForPair(', a:lnum, ', ', a:cnum, ', ', a:beg, ', ',
-        \ a:end, ', ', a:backwards, '): ', result)
   return result
 endfunction
 
@@ -573,7 +508,6 @@ function s:StartsFluentAccess(lnum) abort
     let pnbline = getline(pnbnum)
     let result = pnbline !~ s:fluent_accessor
   endif
-  call s:Log('StartsFluentAccess(', line, '): ', result)
   return result
 endfunction
 
@@ -584,13 +518,10 @@ endfunction
 "
 function s:StartsMultiLineAssignment(lnum) abort
   let line = s:StripComments(getline(a:lnum))
-  call s:Log('  no comments: ', line)
   let line = s:StripStrings(line)
-  call s:Log('  no strings: ', line)
   " Count lines that have "x = something" but that don't end with ; or , or
   " {
   let result = line =~# '\w\S*\s*=[^>]' && line !~# '=[^>].*[;,{]\s*$'
-  call s:Log('StartsMultiLineAssignment(', line, '): ', result)
   return result
 endfunction 
 
@@ -602,7 +533,6 @@ endfunction
 function s:StartsMultiLineVar(lnum) abort
   let line = getline(a:lnum)
   let result = line =~ '\<var\s\+\w\+\>.*,' . s:js_end_line_comment . '$'
-  call s:Log('StartsMultiLineVar(', line, '): ', result)
   return result
 endfunction
 
